@@ -6,7 +6,7 @@ import { mcpServer } from './server-instance';
 const app = express();
 app.use(express.json());
 
-app.get('/mcp', async (req, res) => {
+app.all('/mcp', async (req, res) => {
   try {
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined
@@ -17,7 +17,7 @@ app.get('/mcp', async (req, res) => {
     });
 
     await mcpServer.connect(transport);
-    await transport.handleRequest(req, res, req.body);
+    await transport.handleRequest(req, res, req?.body);
   } catch (error) {
     console.error('Error handling MCP request:', error);
     if (!res.headersSent) {

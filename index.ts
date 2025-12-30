@@ -6,7 +6,7 @@ import { mcpServer } from './server-instance';
 const app = express();
 app.use(express.json());
 
-app.post('/mcp', async (req, res) => {
+app.get('/mcp', async (req, res) => {
   try {
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined

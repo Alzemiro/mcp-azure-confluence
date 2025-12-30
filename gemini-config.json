@@ -1,0 +1,13 @@
+{
+  "tools": {
+    "custom_tools": [
+      {
+        "name": "azure-boards-connector",
+        "description": "API para interagir com o Azure Boards e obter informações sobre tarefas do projeto.",
+        "mcp_server": {
+          "url": "http://127.0.0.1:3005/mcp"
+        }
+      }
+    ]
+  }
+}

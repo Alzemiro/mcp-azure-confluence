@@ -1,0 +1,22 @@
+# Dependências locais (serão instaladas no container)
+node_modules/
+
+# Variáveis de ambiente e segredos
+.env
+.env.*
+
+# Git
+.git/
+.gitignore
+
+# Configurações de IDE
+.idea/
+.vscode/
+
+# Artefatos de build locais (serão gerados no container)
+dist/
+build/
+
+# Logs e outros
+*.log
+npm-debug.log*

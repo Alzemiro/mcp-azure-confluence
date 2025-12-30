@@ -1,0 +1,146 @@
+{
+  "name": "azure_boards_mcp",
+  "description": "API para interagir com o Azure Boards e obter informações sobre tarefas do projeto.",
+  "functions": [
+    {
+      "name": "getTasks",
+      "description": "Returns a hierarchical list of all active tasks, grouped by Epic and User Story.",
+      "parameters": []
+    },
+    {
+      "name": "getTaskDescription",
+      "description": "Returns the details and description of a specific task.",
+      "parameters": [
+        {
+          "name": "taskId",
+          "description": "The ID of the task.",
+          "required": true,
+          "schema": {
+            "type": "number"
+          }
+        }
+      ]
+    },
+    {
+      "name": "getChildTasks",
+      "description": "Returns a list of child tasks for a given parent task.",
+      "parameters": [
+        {
+          "name": "parentId",
+          "description": "The ID of the parent task.",
+          "required": true,
+          "schema": {
+            "type": "number"
+          }
+        }
+      ]
+    },
+    {
+      "name": "countAllTasks",
+      "description": "Returns the total count of all tasks ever created in the project.",
+      "parameters": []
+    },
+    {
+      "name": "getTasksByType",
+      "description": "Returns a list of tasks of a specific type. The possible types are 'Epic', 'User Story' and 'Task'.",
+      "parameters": [
+        {
+          "name": "taskType",
+          "description": "The type of the task. Can be 'Epic', 'User Story' or 'Task'.",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": ["Epic", "User Story", "Task"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "get_page",
+      "description": "Retrieve a specific Confluence page by its ID.",
+      "parameters": [
+        {
+          "name": "pageId",
+          "description": "The ID of the Confluence page.",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    {
+      "name": "search_confluence",
+      "description": "Search Confluence content using CQL (Confluence Query Language).",
+      "parameters": [
+        {
+          "name": "cql",
+          "description": "CQL search query (e.g., 'type=page AND space=DEMO AND text ~ \"search term\"').",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    {
+      "name": "list_spaces",
+      "description": "List all available Confluence spaces.",
+      "parameters": []
+    },
+    {
+      "name": "create_page",
+      "description": "Creates a new Confluence page. Content must be in Confluence Storage Format (XML-based).",
+      "parameters": [
+        {
+          "name": "spaceKey",
+          "description": "The key of the space where the page will be created.",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "title",
+          "description": "The title of the new page.",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "content",
+          "description": "Page content in Confluence Storage Format (XML-based).",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "parentId",
+          "description": "ID of the parent page (optional).",
+          "required": false,
+          "schema": { "type": "string" }
+        }
+      ]
+    },
+    {
+      "name": "update_page",
+      "description": "Updates an existing Confluence page. Content must be in Confluence Storage Format (XML-based).",
+      "parameters": [
+        {
+          "name": "pageId",
+          "description": "The ID of the page to update.",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "title",
+          "description": "The new title for the page.",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "content",
+          "description": "New page content in Confluence Storage Format (XML-based).",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ]
+    }
+  ]
+}

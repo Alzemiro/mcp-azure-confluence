@@ -65,3 +65,50 @@ export interface ConfluenceUser {
     self: string;
   };
 }
+
+export interface CommentVersion {
+  createdAt: string;
+  message?: string;
+  number: number;
+  minorEdit: boolean;
+  authorId: string;
+}
+
+export interface CommentBody {
+  storage?: {
+    value: string;
+    representation: string;
+  };
+  atlas_doc_format?: {
+    value: string;
+    representation: string;
+  };
+}
+
+export interface CommentProperties {
+  inlineMarkerRef?: string;
+  inlineOriginalSelection?: string;
+}
+
+export interface ConfluenceComment {
+  id: string;
+  status: 'current' | 'deleted' | 'draft';
+  title?: string;
+  pageId?: string;
+  blogPostId?: string;
+  version?: CommentVersion;
+  body?: CommentBody;
+  resolutionStatus?: 'open' | 'resolved' | 'reopened';
+  properties?: CommentProperties;
+  _links?: {
+    webui?: string;
+  };
+}
+
+export interface CommentListResult {
+  results: ConfluenceComment[];
+  _links?: {
+    next?: string;
+    base?: string;
+  };
+}

@@ -290,6 +290,23 @@ mcpServer.registerTool(
 );
 
 mcpServer.registerTool(
+  'listTeams',
+  {
+    title: 'List Teams',
+    description: 'Lists all teams in the configured Azure DevOps project. Useful to discover the exact team name to set in AZURE_DEVOPS_TEAM.',
+    inputSchema: {},
+    outputSchema: { teams: z.array(z.any()) },
+  },
+  async () => {
+    const teams = await azureBoards.listTeams();
+    return {
+      content: [{ type: 'text', text: JSON.stringify(teams, null, 2) }],
+      structuredContent: { teams },
+    };
+  }
+);
+
+mcpServer.registerTool(
   'listTeamIterations',
   {
     title: 'List Team Iterations',

@@ -5,7 +5,7 @@ import { TeamContext } from 'azure-devops-node-api/interfaces/CoreInterfaces';
 const orgUrl = process.env.AZURE_DEVOPS_ORG_URL;
 const token = process.env.AZURE_DEVOPS_PAT;
 const project = process.env.AZURE_DEVOPS_PROJECT;
-const team = process.env.AZURE_DEVOPS_TEAM || project;
+const team = process.env.AZURE_DEVOPS_TEAM;
 
 if (!orgUrl || !token || !project) {
   throw new Error('Missing required environment variables: AZURE_DEVOPS_ORG_URL, AZURE_DEVOPS_PAT, AZURE_DEVOPS_PROJECT');
@@ -227,7 +227,7 @@ export const getSprintUserStoriesWithChildren = async (sprintPath: string) => {
 };
 
 export const listTeamIterations = async (timeframe?: 'current' | 'past' | 'future') => {
-  console.log(`Requesting team iterations (timeframe=${timeframe ?? 'all'})...`);
+  console.log(`Requesting team iterations (project="${project}", team="${team}", timeframe=${timeframe ?? 'all'})...`);
   const authHandler = ado.getPersonalAccessTokenHandler(token);
   const connection = new ado.WebApi(orgUrl, authHandler);
   const workApi = await connection.getWorkApi();
@@ -245,6 +245,20 @@ export const listTeamIterations = async (timeframe?: 'current' | 'past' | 'futur
     }));
   } catch (error: any) {
     console.error('Error listing team iterations:', error);
+    throw error;
+  }
+};
+
+export const listTeams = async () => {
+  console.log(`Listing teams for project "${project}"...`);
+  const authHandler = ado.getPersonalAccessTokenHandler(token);
+  const connection = new ado.WebApi(orgUrl, authHandler);
+  const coreApi = await connection.getCoreApi();
+  try {
+    const teams = await coreApi.getTeams(project!);
+    return (teams || []).map(t => ({ id: t.id, name: t.name, projectName: t.projectName }));
+  } catch (error: any) {
+    console.error('Error listing teams:', error);
     throw error;
   }
 };

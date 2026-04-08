@@ -50,7 +50,11 @@
           "required": true,
           "schema": {
             "type": "string",
-            "enum": ["Epic", "User Story", "Task"]
+            "enum": [
+              "Epic",
+              "User Story",
+              "Task"
+            ]
           }
         }
       ]
@@ -96,25 +100,33 @@
           "name": "spaceKey",
           "description": "The key of the space where the page will be created.",
           "required": true,
-          "schema": { "type": "string" }
+          "schema": {
+            "type": "string"
+          }
         },
         {
           "name": "title",
           "description": "The title of the new page.",
           "required": true,
-          "schema": { "type": "string" }
+          "schema": {
+            "type": "string"
+          }
         },
         {
           "name": "content",
           "description": "Page content in Confluence Storage Format (XML-based).",
           "required": true,
-          "schema": { "type": "string" }
+          "schema": {
+            "type": "string"
+          }
         },
         {
           "name": "parentId",
           "description": "ID of the parent page (optional).",
           "required": false,
-          "schema": { "type": "string" }
+          "schema": {
+            "type": "string"
+          }
         }
       ]
     },
@@ -126,19 +138,128 @@
           "name": "pageId",
           "description": "The ID of the page to update.",
           "required": true,
-          "schema": { "type": "string" }
+          "schema": {
+            "type": "string"
+          }
         },
         {
           "name": "title",
           "description": "The new title for the page.",
           "required": true,
-          "schema": { "type": "string" }
+          "schema": {
+            "type": "string"
+          }
         },
         {
           "name": "content",
           "description": "New page content in Confluence Storage Format (XML-based).",
           "required": true,
-          "schema": { "type": "string" }
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    {
+      "name": "get_page_comments",
+      "description": "Retrieve comments from a specific Confluence page. Can filter by location (inline or footer comments) and depth.",
+      "parameters": [
+        {
+          "name": "pageId",
+          "description": "The ID of the Confluence page.",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "location",
+          "description": "Filter by comment location: 'inline' for inline comments, 'footer' for page footer comments, or empty for all.",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "inline",
+              "footer",
+              ""
+            ]
+          }
+        },
+        {
+          "name": "depth",
+          "description": "Comment depth: 'all' for all comments including replies, 'root' for top-level only.",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "all",
+              "root"
+            ]
+          }
+        },
+        {
+          "name": "limit",
+          "description": "Maximum number of comments to return.",
+          "required": false,
+          "schema": {
+            "type": "number"
+          }
+        }
+      ]
+    },
+    {
+      "name": "getSprintUserStoriesWithChildren",
+      "description": "Returns a list of User Stories in a specific sprint, along with their child tasks.",
+      "parameters": [
+        {
+          "name": "sprintPath",
+          "description": "The Iteration Path of the sprint (e.g., 'ProjectName\\\\Sprint 1').",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    {
+      "name": "listSprints",
+      "description": "Returns a list of all sprints (iterations) in the project.",
+      "parameters": []
+    },
+    {
+      "name": "listTeamIterations",
+      "description": "Lists iterations (sprints) assigned to the configured Azure DevOps team. Optionally filter by timeframe.",
+      "parameters": [
+        {
+          "name": "timeframe",
+          "description": "Optional filter: 'current', 'past' or 'future'.",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": ["current", "past", "future"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "getIterationTasks",
+      "description": "Returns work items of a sprint iteration. Accepts an iteration id, full name, substring, or a trailing number (e.g., '32', 'Sprint Experimental 32').",
+      "parameters": [
+        {
+          "name": "iterationQuery",
+          "description": "Iteration id, full name, substring, or trailing number (e.g., '32').",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "onlyTasks",
+          "description": "If true, return only Task work items.",
+          "required": false,
+          "schema": {
+            "type": "boolean"
+          }
         }
       ]
     }

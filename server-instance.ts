@@ -117,6 +117,34 @@ mcpServer.registerTool(
     };
   }
 );
+
+mcpServer.registerTool(
+  'get_page_comments',
+  {
+    title: 'Get Page Comments',
+    description: 'Retrieve comments from a specific Confluence page. Can filter by location (inline or footer comments) and depth.',
+    inputSchema: {
+      pageId: z.string().describe('The ID of the Confluence page.'),
+      location: z.enum(['inline', 'footer', '']).optional().describe("Filter by comment location: 'inline' for inline comments, 'footer' for page footer comments, or empty for all."),
+      depth: z.enum(['all', 'root']).optional().describe("Comment depth: 'all' for all comments including replies, 'root' for top-level only."),
+      limit: z.number().optional().describe('Maximum number of comments to return.'),
+    },
+    outputSchema: {
+      comments: z.any(),
+    },
+  },
+  async ({ pageId, location, depth, limit }) => {
+    const comments = await confluenceClient.getPageComments(pageId, {
+      location: location || undefined,
+      depth: depth || undefined,
+      limit: limit || undefined
+    });
+    return {
+      content: [{ type: 'text', text: JSON.stringify(comments, null, 2) }],
+      structuredContent: { comments },
+    };
+  }
+);
 // #endregion
 
 mcpServer.registerTool(
@@ -168,7 +196,7 @@ mcpServer.registerTool(
   {
     title: 'Get Child Tasks',
     description: 'Returns a list of child tasks for a given parent task.',
-      inputSchema: {
+    inputSchema: {
       parentId: z.number().describe('The ID of the parent task.'),
     },
     outputSchema: {
@@ -203,8 +231,9 @@ mcpServer.registerTool(
     const count = await azureBoards.countAllTasks();
     return {
       content: [{ type: 'text', text: JSON.stringify(count, null, 2) }],
-    structuredContent: count,
-  }}
+      structuredContent: count,
+    }
+  }
 );
 
 mcpServer.registerTool(
@@ -229,6 +258,97 @@ mcpServer.registerTool(
     return {
       content: [{ type: 'text', text: JSON.stringify(tasks, null, 2) }],
       structuredContent: { tasks },
+    };
+  }
+);
+
+mcpServer.registerTool(
+  'getSprintUserStoriesWithChildren',
+  {
+    title: 'Get Sprint User Stories With Children',
+    description: 'Returns a list of User Stories in a specific sprint, along with their child tasks.',
+    inputSchema: {
+      sprintPath: z.string().describe('The Iteration Path of the sprint (e.g., "ProjectName\\\\Sprint 1").'),
+    },
+    outputSchema: {
+      userStories: z.array(z.object({
+        id: z.number(),
+        title: z.string(),
+        state: z.string(),
+        type: z.string(),
+        children: z.array(z.any())
+      }).passthrough()),
+    },
+  },
+  async ({ sprintPath }) => {
+    const userStories = await azureBoards.getSprintUserStoriesWithChildren(sprintPath);
+    return {
+      content: [{ type: 'text', text: JSON.stringify(userStories, null, 2) }],
+      structuredContent: { userStories },
+    };
+  }
+);
+
+mcpServer.registerTool(
+  'listTeamIterations',
+  {
+    title: 'List Team Iterations',
+    description: 'Lists iterations (sprints) assigned to the configured Azure DevOps team. Optionally filter by timeframe.',
+    inputSchema: {
+      timeframe: z.enum(['current', 'past', 'future']).optional().describe("Optional filter: 'current', 'past' or 'future'."),
+    },
+    outputSchema: {
+      iterations: z.array(z.any()),
+    },
+  },
+  async ({ timeframe }) => {
+    const iterations = await azureBoards.listTeamIterations(timeframe);
+    return {
+      content: [{ type: 'text', text: JSON.stringify(iterations, null, 2) }],
+      structuredContent: { iterations },
+    };
+  }
+);
+
+mcpServer.registerTool(
+  'getIterationTasks',
+  {
+    title: 'Get Iteration Tasks',
+    description: "Returns work items of a sprint iteration. Accepts an iteration id, full name, substring, or a trailing number (e.g., '32', 'Sprint Experimental 32').",
+    inputSchema: {
+      iterationQuery: z.string().describe("Iteration id, full name, substring, or trailing number (e.g., '32')."),
+      onlyTasks: z.boolean().optional().describe('If true, return only Task work items.'),
+    },
+    outputSchema: {
+      iteration: z.any(),
+      items: z.array(z.any()),
+      tree: z.array(z.any()),
+    },
+  },
+  async ({ iterationQuery, onlyTasks }) => {
+    const result = await azureBoards.getIterationTasks(iterationQuery, { onlyTasks });
+    return {
+      content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+      structuredContent: result,
+    };
+  }
+);
+
+mcpServer.registerTool(
+  'listSprints',
+  {
+    title: 'List Sprints',
+    description: 'Returns a list of all sprints (iterations) in the project.',
+    inputSchema: {},
+    outputSchema: {
+      sprints: z.array(z.any())
+    },
+  },
+  async () => {
+    const sprints = await azureBoards.listSprints();
+    return {
+      content: [{ type: 'text', text: JSON.stringify(sprints, null, 2) }],
+      structuredContent: { sprints },
     };
   }
 );

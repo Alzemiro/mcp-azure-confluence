@@ -1,0 +1,74 @@
+services:
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcp-server
+    environment:
+      PORT: "3005"
+      AZURE_DEVOPS_ORG_URL: ${AZURE_DEVOPS_ORG_URL}
+      AZURE_DEVOPS_PROJECT: ${AZURE_DEVOPS_PROJECT}
+      AZURE_DEVOPS_PAT: ${AZURE_DEVOPS_PAT}
+      AZURE_DEVOPS_TEAM: ${AZURE_DEVOPS_TEAM}
+      CONFLUENCE_URL: ${CONFLUENCE_URL}
+      CONFLUENCE_USER: ${CONFLUENCE_USER}
+      CONFLUENCE_API_TOKEN: ${CONFLUENCE_API_TOKEN}
+    expose:
+      - "3005"
+    restart: unless-stopped
+    networks:
+      - mcp-net
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3005/mcp', r => r.statusCode < 500 ? process.exit(0) : process.exit(1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  cert-init:
+    image: alpine/openssl
+    container_name: cert-init
+    volumes:
+      - certs:/certs
+      - ./nginx/generate-certs.sh:/generate-certs.sh:ro
+    entrypoint: ["sh", "/generate-certs.sh"]
+    restart: "no"
+    networks:
+      - mcp-net
+
+  nginx:
+    image: nginx:alpine
+    container_name: mcp-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - certs:/etc/nginx/certs:ro
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
+      mcp-server:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - mcp-net
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: mcp-cloudflared
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - mcp-server
+    restart: unless-stopped
+    networks:
+      - mcp-net
+
+volumes:
+  certs:
+
+networks:
+  mcp-net:
+    driver: bridge

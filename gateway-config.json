@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "azure-boards-connector-std": {
+      "url": "http://mcp-server:3005/mcp",
+      "transport": "streamable-http"
+    }
+  }
+}

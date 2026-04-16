@@ -22,3 +22,11 @@ out/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Certificados TLS gerados (volume Docker e cert-init)
+nginx/certs/
+nginx/server.crt
+
+# Configurações locais de ferramentas AI
+.claude/
+.gemini/

@@ -17,6 +17,10 @@ node_modules/
 dist/
 build/
 
+# Docker compose e gateway
+docker-compose.yml
+gateway-config.json
+
 # Logs e outros
 *.log
 npm-debug.log*

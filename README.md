@@ -1,81 +1,167 @@
 # MCP - Conector Azure Boards e Confluence
 
-Este projeto é um servidor Node.js compatível com o Model-View-Controller (MCP). Ele expõe as APIs do Azure Boards e do Confluence como um conjunto de ferramentas que podem ser usadas por assistentes de IA e outras aplicações compatíveis com o MCP.
+Servidor MCP (Model Context Protocol) que expõe as APIs do Azure Boards e do Confluence como ferramentas para assistentes de IA compatíveis com MCP (Claude Code, Perplexity, etc.).
+
+## Arquitetura
+
+```
+Claude Code / Perplexity
+        │
+        │ HTTPS
+        ▼
+Cloudflare Edge (WAF + Tunnel)
+        │
+        │ HTTP
+        ▼
+nginx (SSL termination) ── container mcp-nginx
+        │
+        │ HTTP proxy
+        ▼
+MCP Server (Express + MCP SDK) ── container mcp-server :3005
+        │
+        ├── Azure DevOps API (PAT)
+        └── Confluence API (API Token)
+```
+
+## Pré-requisitos
+
+- Docker e Docker Compose
+- Conta Cloudflare com domínio configurado
+- PAT do Azure DevOps com permissão de leitura em Work Items
+- Token de API do Atlassian (Confluence)
 
 ## Configuração
 
-1.  **Instalar Dependências:**
-    O projeto requer Node.js. Se as dependências não estiverem instaladas, elas serão baixadas automaticamente ao executar o script de inicialização. Para uma instalação manual, execute:
-    ```bash
-    npm install
-    ```
+### 1. Variáveis de ambiente
 
-2.  **Configurar Variáveis de Ambiente:**
-    - Crie um arquivo `.env` na raiz do projeto (`mcp/.env`).
-    - Adicione as seguintes variáveis com os seus dados do Azure DevOps e Confluence:
+Cria o ficheiro `.env` a partir do template:
 
-      ```
-      # --- Azure DevOps ---
-      # URL da sua organização no Azure DevOps
-      AZURE_DEVOPS_ORG_URL=https://dev.azure.com/sua_organizacao
-      # Nome do seu projeto
-      AZURE_DEVOPS_PROJECT=seu_projeto
-      # Personal Access Token (PAT) com permissão para ler Work Items
-      AZURE_DEVOPS_PAT=seu_pat
+```bash
+cp .env.template .env
+```
 
-      # --- Confluence ---
-      # URL da sua instância do Confluence (ex: https://sua-empresa.atlassian.net)
-      CONFLUENCE_URL=https://sua-empresa.atlassian.net
-      # Email do usuário para autenticação no Confluence
-      CONFLUENCE_USER=seu-email@exemplo.com
-      # Token de API do Atlassian
-      CONFLUENCE_API_TOKEN=seu_token_de_api
-      ```
+Preenche as variáveis:
 
-## Execução
+```env
+# Azure DevOps
+AZURE_DEVOPS_ORG_URL=https://dev.azure.com/sua_organizacao
+AZURE_DEVOPS_PROJECT=nome_do_projeto
+AZURE_DEVOPS_PAT=seu_pat
+AZURE_DEVOPS_TEAM=nome_da_equipa
 
-A maneira mais simples de executar o projeto no Windows é usando o script `start.bat`.
+# Confluence
+CONFLUENCE_URL=https://sua-empresa.atlassian.net
+CONFLUENCE_USER=email@exemplo.com
+CONFLUENCE_API_TOKEN=seu_token
 
-### Windows
+# Cloudflare Tunnel
+CLOUDFLARE_TUNNEL_TOKEN=token_do_tunnel_cloudflare
 
-1.  Execute o arquivo `start.bat` com um duplo clique.
-2.  O script irá:
-    - Verificar se as dependências (`node_modules`) existem e, se não, irá instalá-las (`npm install`).
-    - Iniciar o servidor da aplicação MCP em uma janela de terminal.
-    - Aguardar até que o servidor esteja pronto.
-    - Iniciar o proxy do MCP Superassistant em uma segunda janela, conectando-se ao servidor local.
+# Token de segurança para a WAF rule do Cloudflare
+CLAUDFLARE_SECURE_TOKEN_RULE=Bearer <token_gerado>
+```
 
-### Outros Sistemas Operacionais (ou Execução Manual)
+Para gerar um token seguro:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
 
-1.  **Inicie o servidor MCP:**
-    Abra um terminal e execute:
-    ```bash
-    npm run start:app
-    ```
-    O servidor estará em execução em `http://localhost:3005/mcp`.
+### 2. Cloudflare Tunnel
 
-2.  **Inicie o Proxy:**
-    Abra um **segundo** terminal e execute o comando abaixo para iniciar o proxy que conecta o servidor local ao MCP Superassistant.
-    ```bash
-    npx @srbhptl39/mcp-superassistant-proxy@latest --config config.json --host localhost --port 3005 --ssePath /mcp --outputTransport streamableHttp
-    ```
+1. Acede a [Cloudflare Zero Trust](https://one.dash.cloudflare.com) → Networks → Tunnels → **Create a Tunnel**
+2. Selecciona **Cloudflared** e copia o token para `CLOUDFLARE_TUNNEL_TOKEN`
+3. Em **Public Hostnames**, adiciona:
 
-Após a execução, você pode acessar o [MCP Superassistant](https://mcpsuperassistant.ai/) para interagir com as ferramentas.
+   | Campo | Valor |
+   |---|---|
+   | Subdomain | `mcp` (ou outro) |
+   | Domain | o teu domínio |
+   | Type | `HTTP` |
+   | URL | `mcp-server:3005` |
 
-## Ferramentas Disponíveis (MCP)
+### 3. Protecção via WAF (Cloudflare)
 
-Este servidor expõe as seguintes ferramentas através do protocolo MCP:
+No Cloudflare Dashboard → o teu domínio → **Security → WAF → Custom Rules → Create rule**:
+
+- **Expression**: 
+  ```
+  not any(http.request.headers["authorization"][*] contains "Bearer <o-teu-token>")
+  ```
+- **Action**: Block
+
+Isto bloqueia todos os requests sem o token correcto na edge, antes de chegarem ao servidor.
+
+## Deploy
+
+```bash
+docker compose up -d
+```
+
+Para verificar os logs:
+```bash
+docker compose logs -f
+```
+
+Para rebuildar após alterações ao código:
+```bash
+docker compose up -d --build mcp-server
+```
+
+## Uso no Perplexity
+
+1. Acede ao Perplexity → Settings → **MCP Servers** → Add
+2. Preenche:
+
+   | Campo | Valor |
+   |---|---|
+   | URL | `https://mcp.<teu-dominio>/mcp` |
+   | Transport | Streamable HTTP |
+   | Authentication | API Key |
+   | API Key | `Bearer <o-teu-token>` |
+
+3. Guarda e activa o servidor.
+
+## Uso no Claude Code
+
+Adiciona ao `~/.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "azure-boards-connector": {
+      "type": "http",
+      "url": "http://localhost:3005/mcp"
+    }
+  }
+}
+```
+
+> O acesso local não requer autenticação. A WAF rule só actua nos requests que passam pelo Cloudflare.
+
+## Ferramentas Disponíveis
 
 ### Azure Boards
-- **getTasks**: Retorna uma lista hierárquica de todas as tarefas ativas, agrupadas por Épico e User Story.
-- **getTaskDescription**: Retorna os detalhes e a descrição de uma tarefa específica.
-- **getChildTasks**: Retorna uma lista de tarefas filhas para uma determinada tarefa pai.
-- **countAllTasks**: Retorna a contagem total de todas as tarefas já criadas no projeto.
-- **getTasksByType**: Retorna uma lista de tarefas de um tipo específico ('Epic', 'User Story' ou 'Task').
+
+| Ferramenta | Descrição |
+|---|---|
+| `getTasks` | Lista hierárquica de tarefas activas (Épico → User Story → Task) |
+| `getTaskDescription` | Detalhes e descrição de uma tarefa específica |
+| `getChildTasks` | Tarefas filhas de uma tarefa pai |
+| `countAllTasks` | Total de tarefas criadas no projecto |
+| `getTasksByType` | Tarefas filtradas por tipo: `Epic`, `User Story` ou `Task` |
+| `getSprintUserStoriesWithChildren` | User Stories de um sprint com as suas tarefas filhas |
+| `listTeams` | Lista todas as equipas do projecto Azure DevOps |
+| `listTeamIterations` | Iterações (sprints) da equipa, com filtro por `current`/`past`/`future` |
+| `getIterationTasks` | Work items de um sprint por ID, nome, substring ou número |
+| `listSprints` | Lista todos os sprints do projecto |
 
 ### Confluence
-- **get_page**: Recupera uma página específica do Confluence pelo seu ID.
-- **search_confluence**: Pesquisa conteúdo no Confluence usando CQL (Confluence Query Language).
-- **list_spaces**: Lista todos os espaços disponíveis no Confluence.
-- **create_page**: Cria uma nova página no Confluence.
-- **update_page**: Atualiza uma página existente no Confluence.
+
+| Ferramenta | Descrição |
+|---|---|
+| `get_page` | Recupera uma página pelo ID |
+| `search_confluence` | Pesquisa conteúdo via CQL |
+| `list_spaces` | Lista todos os espaços disponíveis |
+| `create_page` | Cria uma nova página (conteúdo em Confluence Storage Format) |
+| `update_page` | Actualiza uma página existente |
+| `get_page_comments` | Comentários de uma página, com filtro por localização e profundidade |

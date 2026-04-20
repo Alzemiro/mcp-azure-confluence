@@ -145,7 +145,7 @@ Adiciona ao `~/.claude/settings.json`:
 | Ferramenta | Descrição |
 |---|---|
 | `getTasks` | Lista hierárquica de tarefas activas (Épico → User Story → Task) |
-| `getTaskDescription` | Detalhes e descrição de uma tarefa específica |
+| `getTaskDescription` | Detalhes, descrição e comentários de uma tarefa específica |
 | `getChildTasks` | Tarefas filhas de uma tarefa pai |
 | `countAllTasks` | Total de tarefas criadas no projecto |
 | `getTasksByType` | Tarefas filtradas por tipo: `Epic`, `User Story` ou `Task` |

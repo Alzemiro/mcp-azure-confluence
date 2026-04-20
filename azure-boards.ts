@@ -85,14 +85,27 @@ export const getTaskDescription = async (taskId: number) => {
   const witApi = await connection.getWorkItemTrackingApi();
 
   try {
-    const workItem = await witApi.getWorkItem(taskId);
+    const [workItem, commentsResult] = await Promise.all([
+      witApi.getWorkItem(taskId),
+      witApi.getComments(project!, taskId),
+    ]);
+
+    const comments = (commentsResult.comments ?? []).map((c) => ({
+      id: c.id,
+      text: stripHtml(c.text ?? ''),
+      createdBy: c.createdBy?.displayName ?? '',
+      createdDate: c.createdDate,
+      modifiedDate: c.modifiedDate,
+    }));
+
     console.log(`Successfully fetched description for task ID: ${taskId}.`);
     return {
       id: workItem.id,
       title: workItem.fields!['System.Title'],
       state: workItem.fields!['System.State'],
       type: workItem.fields!['System.WorkItemType'],
-      description: stripHtml(workItem.fields!['System.Description'] || workItem.fields!['Microsoft.VSTS.TCM.ReproSteps'])
+      description: stripHtml(workItem.fields!['System.Description'] || workItem.fields!['Microsoft.VSTS.TCM.ReproSteps']),
+      comments,
     };
   } catch (error) {
     console.error(`Error fetching description for task ID ${taskId}:`, error);

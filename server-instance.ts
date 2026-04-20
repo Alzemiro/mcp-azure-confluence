@@ -170,7 +170,7 @@ mcpServer.registerTool(
   'getTaskDescription',
   {
     title: 'Get Task Description',
-    description: 'Returns the details and description of a specific task.',
+    description: 'Returns the details, description, and comments of a specific task.',
     inputSchema: {
       taskId: z.number().describe('The ID of the task.'),
     },
@@ -180,6 +180,13 @@ mcpServer.registerTool(
       state: z.string(),
       type: z.string(),
       description: z.string(),
+      comments: z.array(z.object({
+        id: z.number().optional(),
+        text: z.string(),
+        createdBy: z.string(),
+        createdDate: z.any().optional(),
+        modifiedDate: z.any().optional(),
+      })),
     },
   },
   async ({ taskId }) => {

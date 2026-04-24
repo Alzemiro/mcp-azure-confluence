@@ -90,7 +90,11 @@ export const getTaskDescription = async (taskId: number) => {
       witApi.getComments(project!, taskId),
     ]);
 
-    const comments = (commentsResult.comments ?? []).map((c) => ({
+    if (!workItem) {
+      throw new Error(`Work item ${taskId} not found.`);
+    }
+
+    const comments = (commentsResult?.comments ?? []).map((c) => ({
       id: c.id,
       text: stripHtml(c.text ?? ''),
       createdBy: c.createdBy?.displayName ?? '',
@@ -99,12 +103,13 @@ export const getTaskDescription = async (taskId: number) => {
     }));
 
     console.log(`Successfully fetched description for task ID: ${taskId}.`);
+    const fields = workItem.fields || {};
     return {
       id: workItem.id,
-      title: workItem.fields!['System.Title'],
-      state: workItem.fields!['System.State'],
-      type: workItem.fields!['System.WorkItemType'],
-      description: stripHtml(workItem.fields!['System.Description'] || workItem.fields!['Microsoft.VSTS.TCM.ReproSteps']),
+      title: fields['System.Title'],
+      state: fields['System.State'],
+      type: fields['System.WorkItemType'],
+      description: stripHtml(fields['System.Description'] || fields['Microsoft.VSTS.TCM.ReproSteps']),
       comments,
     };
   } catch (error) {

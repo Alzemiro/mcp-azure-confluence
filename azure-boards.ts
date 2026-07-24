@@ -105,6 +105,7 @@ export const getTaskDescription = async (taskId: number) => {
       state: workItem.fields!['System.State'],
       type: workItem.fields!['System.WorkItemType'],
       description: stripHtml(workItem.fields!['System.Description'] || workItem.fields!['Microsoft.VSTS.TCM.ReproSteps']),
+      acceptanceCriteria: stripHtml(workItem.fields!['Microsoft.VSTS.Common.AcceptanceCriteria'] || ''),
       comments,
     };
   } catch (error) {

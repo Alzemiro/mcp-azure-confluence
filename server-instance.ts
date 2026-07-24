@@ -180,6 +180,7 @@ mcpServer.registerTool(
       state: z.string(),
       type: z.string(),
       description: z.string(),
+      acceptanceCriteria: z.string(),
       comments: z.array(z.object({
         id: z.number().optional(),
         text: z.string(),
